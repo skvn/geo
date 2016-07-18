@@ -13,7 +13,7 @@
     }
   ],
   "autoload": {
-    "psr-4": {"Skvn\\Laraext\\": "src"}
+    "psr-4": {"Skvn\\Geo\\": "src"}
   },
   "minimum-stability": "dev"
 }
