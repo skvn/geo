@@ -22,7 +22,7 @@ trait ModelGeoCoordinatesTrait
             $this->lat = $coords['lat'];
             $this->geo_coded = 1;
         }
-        $this->saveDirect();
+        $this->save();
     }
 
 }
