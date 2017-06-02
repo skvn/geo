@@ -12,6 +12,12 @@
       "email": "vit@webstandart.ru"
     }
   ],
+  "require": {
+    "php": ">=7.0.0",
+    "skvn/base": "dev-master",
+    "skvn/event": "dev-master",
+    "skvn/app": "dev-master"
+  },
   "autoload": {
     "psr-4": {"Skvn\\Geo\\": "src"}
   },

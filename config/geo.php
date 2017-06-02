@@ -1,7 +1,9 @@
 <?php
 return [
-    'google_maps_key' => env('GMAPS_KEY'),
-    'yandex_maps_key' => env('YMAPS_KEY'),
+    'class' => \Skvn\Geo\GeoService :: class,
+    'google_key' => env('GMAPS_KEY'),
+    'yandex_key' => env('YMAPS_KEY'),
     'coder' => "yandex",
-    'models' => []
+    'models' => [],
+    'kads' => []
 ];
