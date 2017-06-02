@@ -23,114 +23,59 @@ class GeoService
         if (!$lat || !$lng) {
             $data = $this->geocode($address);
             $addrPoint = new Point($data['result']['geometry']['location']['lat'], $data['result']['geometry']['location']['lng']);
-            $x = $data['result']['geometry']['location']['lat'];
-            $y = $data['result']['geometry']['location']['lng'];
-            $destination = $x . ',' . $y;
         } else {
-            $destination = $lat . ',' . $lng;
             $addrPoint = new Point($lat, $lng);
-            $x = $lat;
-            $y = $lng;
         }
+        $destination = $addrPoint->lat . ',' . $addrPoint->lng;
 
         if (!$kad_id) {
             $data = $this->geocode($destination, 'reverse');
-            $addr = $data['result'][0]['formatted_address'];
 
+            $found = false;
             foreach ($data['result'][0]['address_component'] as $key => $val) {
                 foreach ($this->config['kads'] as $k => $v) {
                     $gert = explode(',', $v['str_rep']);
                     if (($gert[0] == $val['long_name'] && $val['type'][0] == $gert[1]) or ($gert[2] == $val['short_name'] && $val['type'][0] == $gert[1])) {
-                        $id_dest = $v['id_dest'];//ID кольцевой
-                        $obl_name = $v['name'];
-                       // $kolco = self::$razv[$id_dest];//МАССИВ РАЗВЯЗОК КОЛЬЦЕВОЙ
-                        $kolco = $v['razv'];
+                        $razv = $v['razv'];
                         $points = $v['points'];
+                        $found = true;
                         break;
                     }
                 }
             }
+            if (!$found) {
+                throw new Exceptions\GeoException('KAD not found');
+            }
         } else {
-            //$kolco = self::$razv[$kolco_id];
-            $kolco = $this->config['kads'][$kad_id]['razv'];
+            $razv = $this->config['kads'][$kad_id]['razv'];
             $points = $this->config['kads'][$kad_id]['points'];
-            $id_dest = $kad_id;
-        }
-
-        //СОЗДАЕМ ПАРУ МАССИВОВ ДЛЯ ДАЛЬНЕЙШЕЙ РОБОТЫ С КООРДИНАТАМИ
-        foreach ($kolco as $k => $v) {
-            //$v['y'] = $v['geo_y'];
-            //$v['x'] = $v['geo_x'];
-            //$v['r'] = self::distance($v['y'], $v['x'], $x, $y);//ГЕОМЕТРИЧЕСКОЕ расстояние от развязки до точки на карте (до адреса)
-            $v['r'] = $addrPoint->distance(new Point($v['lat'], $v['lng']));
-            $coords_array_min[] = $v;
-            $coords[] = $v;
-        }
-
-        //ОПРЕДЕЛЯЕМ ВНУТРИ ЛИ ИЛИ СНАРУЖЕ ВЫБРАННОЙ КОЛЬЦЕВОЙ
-//        if ($id_dest == 1) {
-//            $er_in = self::into_poly($y, $x, self::$TOCHKI_DLYA_IN_OUT_MKAD, 'x', 'y');
-//        }
-//        if ($id_dest == 3) {
-//            $er_in = self::into_poly($y, $x, self::$TOCHKI_DLYA_IN_OUT_KAD, 'x', 'y');
-//        }
-        $er_in = $addrPoint->inPolygon(new Polygon($points));
-        if ($er_in) {
-            if ($id_dest == '1') {
-                return -1;
-            }
-            if ($id_dest == '3') {
-                return -2;
-            }
         }
 
 
-        //НАХОДИМ ДВЕ БЛИЖАЙШИЕ РАЗВЯЗКИ К АДРЕСУ (по геометрическим данным т.е. не по дороге, а напрямую по сфере)
-        //Так не придется делать за раз по 20-30 запросов к гуглу
-        $min = 99999999999999999;
-        for ($i = 0; $i < count($coords_array_min); $i++) {
-            if ($coords_array_min[$i]['r'] < $min) {
-                $min = $coords_array_min[$i]['r'];
-                $f_id = $i;
-            }
-        }
-        $min = 99999999999999999;
-        for ($i = 0; $i < count($coords_array_min); $i++) {
-            if ($coords_array_min[$i]['r'] < $min && $i != $f_id) {
-                $min = $coords_array_min[$i]['r'];
-                $s_id = $i;
-            }
-        }
-        $first = $coords_array_min[$f_id];//точка 1 (развязка)
-        $second = $coords_array_min[$s_id];//точка 2 (развязка)
 
-        //var_dump($first);
-        //var_dump($second);
+        $razv = array_map(function($item) use ($addrPoint){
+            $item['r'] = $addrPoint->distance(new Point($item['lat'], $item['lng']));
+            return $item;
+        }, $razv);
 
-        //РАССТОЯНИЕ ПО ПЕРВОЙ развязке в километрах по дорогам без учета платных дорог и паромов
-        //$url1 = 'https://maps.googleapis.com/maps/api/directions/xml?origin=' . $first['y'] . ',' . $first['x'] . '&destination=' . $x . ',' . $y . '&key=' . \App :: config('app.geo_google_key') . '&mode=driving&avoid=tolls|highways|ferries';
-        //$data = self::xml_to_array(\App :: get('urlLoader')->load($url1,null,['SSL_VERIFYPEER'=>false]));
+        if ($addrPoint->inPolygon(new Polygon($points))) {
+            return 0;
+        }
+
+        usort($razv, function($a, $b) {
+            return $a['r'] <=> $b['r'];
+        });
+        $first = $razv[0];
+        $second = $razv[1];
+
         $data = $this->geocode(['origin' => $first['lat'] . ',' . $first['lng'], 'destination' => $destination], 'route');
-        //var_dump($data);
-
-        $first_point['dl'] = $data['route']['leg']['distance']['value'] / 1000;
-        $first_point['name'] = $first['name'];
+        $first['dl'] = $data['route']['leg']['distance']['value'] / 1000;
 
 
-        //РАССТОЯНИЕ ПО ВТОРОЙ развязке в километрах по дорогам без учета платных дорого и паромов
         $data = $this->geocode(['origin' => $second['lat'] . ',' . $second['lng'], 'destination' => $destination], 'route');
-        //var_dump($data);
-        $second_point['dl'] = $data['route']['leg']['distance']['value'] / 1000;
-        $second_point['name'] = $second['name'];
+        $second['dl'] = $data['route']['leg']['distance']['value'] / 1000;
 
-        //ВЫВОДИМ БЛИЖАЙШЕЕ РАССТОЯНИЕ ИЗ ДВУХ ТОЧЕК
-        if ($second_point['dl'] > $first_point['dl']) {
-            return $first_point['dl'];
-        } else {
-            return $second_point['dl'];
-        }
-
-
+        return $second['dl'] > $first['dl'] ? $first['dl'] : $second['dl'];
     }
 
     function geocode($query, $operation = 'direct', $provider = 'google')
