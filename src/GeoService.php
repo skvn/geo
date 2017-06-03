@@ -20,12 +20,8 @@ class GeoService
     {
         $address = htmlentities(urlencode($address));
 
-        if (!$lat || !$lng) {
-            $data = $this->geocode($address);
-            $addrPoint = new Point($data['result']['geometry']['location']['lat'], $data['result']['geometry']['location']['lng']);
-        } else {
-            $addrPoint = new Point($lat, $lng);
-        }
+
+        $addrPoint = !empty($lat) && !empty($lng) ? new Point($lat, $lng) : $this->getAddressCoordinates($address);
         $destination = $addrPoint->lat . ',' . $addrPoint->lng;
 
         if (!$kad_id) {
@@ -78,6 +74,25 @@ class GeoService
         return $second['dl'] > $first['dl'] ? $first['dl'] : $second['dl'];
     }
 
+    function getAddressCoordinates($address, $provider = 'google')
+    {
+        $address = urlencode($address);
+        $geocode = $this->geocode($address, 'direct', $provider);
+        switch ($provider) {
+            case 'yandex':
+                $coordsStr = $geocode['GeoObjectCollection']['featureMember']['GeoObject']['Point']['pos'];
+                $parts = explode(' ', $coordsStr);
+                return new Point($parts[1], $parts[0]);
+            break;
+            case 'google':
+                return new Point($geocode['result']['geometry']['location']['lat'], $geocode['result']['geometry']['location']['lng']);
+            break;
+            default:
+                throw new Exceptions\GeoException('Geocode provider not found: ' . $provider);
+            break;
+        }
+    }
+
     function geocode($query, $operation = 'direct', $provider = 'google')
     {
         $url = null;
@@ -92,6 +107,16 @@ class GeoService
                     break;
                     case 'route':
                         $url = 'https://maps.googleapis.com/maps/api/directions/xml?origin=' . $query['origin'] . '&destination=' . $query['destination'] . '&mode=driving&avoid=tolls|highways|ferries';
+                    break;
+                    default:
+                        throw new Exceptions\GeoException('Unknown geocode operation: ' . $operation);
+                    break;
+                }
+            break;
+            case 'yandex':
+                switch ($operation) {
+                    case 'direct':
+                        $url = 'https://geocode-maps.yandex.ru/1.x/?results=1&geocode=' . $query;
                     break;
                     default:
                         throw new Exceptions\GeoException('Unknown geocode operation: ' . $operation);

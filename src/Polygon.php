@@ -16,11 +16,7 @@ class Polygon
             if ($point instanceof Point) {
                 $this->points[] = $point;
             } else {
-                if (isset($point['lat'])) {
-                    $this->points[] = new Point($point['lat'], $point['lng']);
-                } else {
-                    $this->points[] = new Point($point[0], $point[1]);
-                }
+                $this->points[] = new Point($point);
             }
         }
     }

@@ -11,8 +11,13 @@ class Point
     function __construct($lat, $lng = null)
     {
         if (is_array($lat)) {
-            $this->lat = $lat[0];
-            $this->lng = $lat[1];
+            if (isset($lat['lng'])) {
+                $this->lat = $lat['lat'];
+                $this->lng = $lat['lng'];
+            } else {
+                $this->lat = $lat[0];
+                $this->lng = $lat[1];
+            }
         } else {
             $this->lat = $lat;
             $this->lng = $lng;
