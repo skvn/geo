@@ -16,6 +16,11 @@ class GeoService
         $this->config = $config;
     }
 
+    function getParam($name)
+    {
+        return $this->config[$name] ?? null;
+    }
+
     function calcKadDistance($address, $lat = null, $lng = null, $kad_id = null)
     {
         $address = htmlentities(urlencode($address));
