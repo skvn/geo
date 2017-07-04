@@ -23,9 +23,8 @@ class GeoService
 
     function calcKadDistance($address, $lat = null, $lng = null, $kad_id = null)
     {
+
         $address = htmlentities(urlencode($address));
-
-
         $addrPoint = !empty($lat) && !empty($lng) ? new Point($lat, $lng) : $this->getAddressCoordinates($address);
         $destination = $addrPoint->lat . ',' . $addrPoint->lng;
 
@@ -146,8 +145,8 @@ class GeoService
         switch ($provider) {
             case 'google':
                 if ($result['status'] != 'OK') {
-                    //var_dump($query);
-                    //var_dump($result);
+                    var_dump($query);
+                    var_dump($result);
                     throw new Exceptions\AddressNotResolvedException($query);
                 }
             break;
