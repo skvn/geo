@@ -86,7 +86,7 @@ class GeoService
             case 'yandex':
                 $coordsStr = $geocode['GeoObjectCollection']['featureMember']['GeoObject']['Point']['pos'];
                 $parts = explode(' ', $coordsStr);
-                return new Point($parts[1], $parts[0]);
+                return new Point($parts[1] ?? null, $parts[0] ?? null);
             break;
             case 'google':
                 return new Point($geocode['result']['geometry']['location']['lat'], $geocode['result']['geometry']['location']['lng']);
