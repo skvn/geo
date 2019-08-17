@@ -147,7 +147,7 @@ class GeoService
         $result = Str :: xml2array($this->app->urlLoader->load($url, null, ['ssl_verifypeer' => false]));
         switch ($provider) {
             case 'google':
-                if ($result['status'] != 'OK') {
+                if ($result['status'] != 'OK' || empty($result['result']['geometry'])) {
                     var_dump($query);
                     var_dump($result);
                     throw new Exceptions\AddressNotResolvedException($query);
