@@ -113,7 +113,7 @@ class GeoService
             case 'yandex':
                 switch ($operation) {
                     case 'direct':
-                        $url = 'https://geocode-maps.yandex.ru/1.x/?results=1&geocode=' . $query.'&apikey='.$this->getConfig('yandex_key');
+                        $url = 'https://geocode-maps.yandex.ru/1.x/?results=1&geocode=' . $query.'&apikey='.$this->getConfig('yandex_http_key');
                     break;
                     default:
                         throw new Exceptions\GeoException('Unknown geocode operation: ' . $operation);
