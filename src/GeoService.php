@@ -3,23 +3,13 @@
 namespace Skvn\Geo;
 
 use Skvn\Base\Traits\AppHolder;
+use Skvn\Base\Traits\ConstructorConfig;
 use Skvn\Base\Helpers\Str;
 
 class GeoService
 {
     use AppHolder;
-
-    protected $config;
-
-    function __construct($config)
-    {
-        $this->config = $config;
-    }
-
-    function getParam($name)
-    {
-        return $this->config[$name] ?? null;
-    }
+    use ConstructorConfig;
 
     function calcKadDistance($address, $lat = null, $lng = null, $kad_id = null)
     {
@@ -123,7 +113,7 @@ class GeoService
             case 'yandex':
                 switch ($operation) {
                     case 'direct':
-                        $url = 'https://geocode-maps.yandex.ru/1.x/?results=1&geocode=' . $query;
+                        $url = 'https://geocode-maps.yandex.ru/1.x/?results=1&geocode=' . $query.'&apikey='.$this->getConfig('yandex_key');
                     break;
                     default:
                         throw new Exceptions\GeoException('Unknown geocode operation: ' . $operation);
