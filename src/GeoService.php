@@ -72,6 +72,9 @@ class GeoService
     {
         $address = urlencode($address);
         $geocode = $this->geocode($address, 'direct', $provider);
+        if (!$geocode) {
+            return false;
+        }
         switch ($provider) {
             case 'yandex':
                 if (!isset($geocode['GeoObjectCollection']['featureMember']['GeoObject']['Point']['pos'])) {
@@ -92,6 +95,10 @@ class GeoService
 
     function geocode($query, $operation = 'direct', $provider = 'google')
     {
+        if (empty($query)) {
+            throw new Exceptions\GeoException('Empty geocode address query');
+        }
+        
         $url = null;
         switch ($provider) {
             case 'google':
